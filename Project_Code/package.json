@@ -1,0 +1,27 @@
+{
+  "name": "questforge",
+  "version": "0.2.0",
+  "description": "Browser RPG for learning Data Structures, Algorithms and OOP (Phaser + Express + C/C++).",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "client": "vite",
+    "server": "node server/server.js",
+    "build:native": "node native/build.mjs",
+    "build": "vite build",
+    "start": "npm run build && node server/server.js",
+    "test": "node --test \"tests/*.test.mjs\"",
+    "build:assets": "python scripts/extract_assets.py",
+    "build:maps": "node scripts/build-maps.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "vite": "^8.2.2"
+  }
+}
