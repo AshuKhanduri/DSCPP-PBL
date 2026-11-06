@@ -1,5 +1,5 @@
 // RoamingChallenge - base for challenges where the player walks around a
-// Tiled map (e.g. Lost Path). Reuses the same Player,
+// Tiled map (Lost Path, Royal Route, Forge, Garden of Balance). Reuses the same Player,
 // MapManager, InteractionSystem and DialogueSystem as the village.
 import { GAME_HEIGHT, GAME_WIDTH } from '../config/constants.js';
 import { Player } from '../entities/Player.js';
@@ -23,7 +23,7 @@ export class RoamingChallenge extends BaseChallenge {
         });
         this.dialogue = new DialogueSystem(scene, this.services, { launchChallenge: () => {} });
         this.interaction = new InteractionSystem(scene, this.player, {
-            isBlocked: () => this.dialogue.isOpen || this.done,
+            isBlocked: () => this.dialogue.isOpen || this.done || this.frozen === true,   // e.g. a lesson panel is open
         });
 
         const cam = scene.cameras.main;
@@ -33,20 +33,23 @@ export class RoamingChallenge extends BaseChallenge {
     }
 
     // Zoom the camera out so the whole map fits the area left of the panel
-    // (used to show an algorithm's result on the real map).
-    showWholeMap({ rightPanel = 0, duration = 900 } = {}) {
+    // (and above an optional bottom panel), to show an algorithm on the real map.
+    // Resolves with project(worldPoint) -> screen point for the final view.
+    showWholeMap({ rightPanel = 0, bottomPanel = 0, duration = 900 } = {}) {
         const cam = this.scene.cameras.main;
-        const areaW = GAME_WIDTH - rightPanel - 16, areaH = GAME_HEIGHT - HUD_BAR - 16;
+        const areaW = GAME_WIDTH - rightPanel - 16, areaH = GAME_HEIGHT - HUD_BAR - bottomPanel - 16;
         const zoom = Math.min(areaW / this.map.width, areaH / this.map.height, 1);
         cam.stopFollow();
         cam.removeBounds();
         // put the map centre at the centre of the free area, not of the screen
-        const screenCx = (GAME_WIDTH - rightPanel) / 2, screenCy = HUD_BAR + (GAME_HEIGHT - HUD_BAR) / 2;
+        const screenCx = (GAME_WIDTH - rightPanel) / 2, screenCy = HUD_BAR + (GAME_HEIGHT - HUD_BAR - bottomPanel) / 2;
         const x = this.map.width / 2 + (GAME_WIDTH / 2 - screenCx) / zoom;
         const y = this.map.height / 2 + (GAME_HEIGHT / 2 - screenCy) / zoom;
         cam.pan(x, y, duration, 'Sine.easeInOut');
         cam.zoomTo(zoom, duration, 'Sine.easeInOut');
-        return new Promise(res => this.scene.time.delayedCall(duration, res));
+        // the camera centres (x, y) on the screen centre at this zoom
+        const project = p => ({ x: (p.x - x) * zoom + GAME_WIDTH / 2, y: (p.y - y) * zoom + GAME_HEIGHT / 2 });
+        return new Promise(res => this.scene.time.delayedCall(duration, () => res(project)));
     }
 
     update(_time, delta) {

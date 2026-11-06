@@ -1,5 +1,5 @@
 // RouteTracker - follows the player across the zones (clearings / towns) of a
-// graph map and keeps their route in a C stack (Lost Path).
+// graph map and keeps their route in a C stack (Lost Path, Royal Route).
 //
 //   walk into a new zone            -> STACK_PUSH zone   (C engine)
 //   walk back into the previous one -> STACK_POP         (backtracking)
@@ -119,7 +119,7 @@ export class RouteTracker {
         this.#strokePath(this.routeLayer, this.route, 6, COLORS.route, 0.55, 0);
     }
 
-    // Highlight an algorithm's path along the trails (e.g. the BFS result).
+    // Highlight an algorithm's path along the trails (e.g. BFS / Dijkstra result).
     drawPath(ids, color, width = 8, offset = 0) {
         this.#strokePath(this.overlay, ids, width + 4, 0x000000, 0.5, offset);
         this.#strokePath(this.overlay, ids, width, color, 1, offset);

@@ -21,7 +21,7 @@ void EntityManager::reset()
 
 std::vector<std::string> EntityManager::supportedTypes()
 {
-    return {"Guide", "King", "Blacksmith", "Librarian", "Guard", "Door", "Chest", "QuestObject"};
+    return {"Guide", "King", "Blacksmith", "GardenKeeper", "Guard", "Door", "Chest", "QuestObject"};
 }
 
 GameEntity *EntityManager::create(const std::string &type, const std::string &id, double x, double y,
@@ -34,7 +34,7 @@ GameEntity *EntityManager::create(const std::string &type, const std::string &id
     if (type == "Guide") e = std::make_unique<Guide>(id, name, x, y);
     else if (type == "King") e = std::make_unique<King>(id, name, x, y);
     else if (type == "Blacksmith") e = std::make_unique<Blacksmith>(id, name, x, y);
-    else if (type == "Librarian") e = std::make_unique<Librarian>(id, name, x, y);
+    else if (type == "GardenKeeper") e = std::make_unique<GardenKeeper>(id, name, x, y);
     else if (type == "Guard") e = std::make_unique<Guard>(id, name, x, y);
     else if (type == "Door") e = std::make_unique<Door>(id, name, x, y, p);
     else if (type == "QuestObject") e = std::make_unique<QuestObject>(id, name, x, y, p);

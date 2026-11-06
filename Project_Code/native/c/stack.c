@@ -5,10 +5,12 @@ void stack_init(Stack *s)
 {
     s->top = NULL;
     s->size = 0;
+    s->capacity = 0;
 }
 
 int stack_push(Stack *s, int value, int aux, const char *text)
 {
+    if (stack_is_full(s)) return 0;                 /* overflow */
     StackNode *node = (StackNode *)malloc(sizeof(StackNode));
     if (!node) return 0;
     node->value = value;
@@ -42,6 +44,11 @@ const StackNode *stack_peek(const Stack *s)
 int stack_is_empty(const Stack *s)
 {
     return s->top == NULL;
+}
+
+int stack_is_full(const Stack *s)
+{
+    return s->capacity > 0 && s->size >= s->capacity;
 }
 
 void stack_clear(Stack *s)

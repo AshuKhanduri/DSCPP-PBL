@@ -1,0 +1,12 @@
+node_modules/
+dist/
+native/bin/*
+!native/bin/.gitkeep
+*.log
+.env
+.env.*
+!.env.example
+
+# personal notes - kept off GitHub
+MY_WORK_VOICE_NOTES*
+PHASE2_COMMIT_PLAN.md

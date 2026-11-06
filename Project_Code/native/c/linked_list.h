@@ -3,6 +3,8 @@
  *
  * Used by the game for:
  *   - the quest chain (quest_chain.c): Quest1 -> Quest2 -> ... -> QuestN
+ *   - the "Chain of Halls" trial in the Tower of Trials, where the player
+ *     builds a list using insert-head / insert-tail / insert-after / remove.
  *
  * insert_head / insert_tail are O(1); find / insert_after / remove are O(n).
  */

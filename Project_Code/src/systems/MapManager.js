@@ -82,7 +82,7 @@ export class GameMap {
     }
 
     // Movement speed multiplier. Only maps with the `terrainSpeed` property
-    // slow the player on costly terrain.
+    // (Royal Route) slow the player on costly terrain.
     speedFactor(x, y) {
         if (!this.properties.terrainSpeed) return 1;
         return 1 / (TERRAIN_FACTOR[this.terrainAt(x, y)] ?? 1);

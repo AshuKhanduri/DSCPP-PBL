@@ -3,7 +3,7 @@
 //   GameEntity (abstract)
 //     +-- Character
 //     |     +-- Player
-//     |     +-- NPC (abstract) -> Guide, King, Blacksmith, Librarian, Guard
+//     |     +-- NPC (abstract) -> Guide, King, Blacksmith, GardenKeeper, Guard
 //     +-- InteractiveObject (abstract)
 //           +-- Door, Chest, QuestObject
 #ifndef GAME_ENTITY_H

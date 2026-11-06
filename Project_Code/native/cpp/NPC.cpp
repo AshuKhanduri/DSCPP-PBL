@@ -44,10 +44,11 @@ std::string Blacksmith::greeting(const Player &player) const
     return "Hammer, heat, patience. That is all smithing is.";
 }
 
-std::string Librarian::greeting(const Player &player) const
+std::string GardenKeeper::greeting(const Player &player) const
 {
-    if (player.hasItem("Lost_Ledger")) return "You found the ledger! Please, handle it gently.";
-    return "Shh. Every record here has its place. Most of them, anyway.";
+    if (player.hasItem("Balance_Seed")) return "Listen - the old trees stand straight again. The garden remembers you.";
+    if (player.hasItem("Trial_Crown")) return "A champion of the Tower? Then you know order matters. Here, so does balance.";
+    return "Welcome to the Garden of Balance. Mind the roots - some trees here have grown crooked.";
 }
 
 std::string Guard::greeting(const Player &player) const

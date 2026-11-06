@@ -7,6 +7,7 @@ import { QuestUI } from '../ui/QuestUI.js';
 import { Notification } from '../ui/Notification.js';
 import { DsaInspector } from '../ui/DsaInspector.js';
 import { prettyItem } from '../systems/InventorySystem.js';
+import { ENDING } from '../data/ending.js';
 
 const EVENT_PUMP_MS = 650;
 
@@ -38,6 +39,7 @@ export class HUDScene extends Phaser.Scene {
             ['quests-changed', refresh], ['inventory-changed', refresh], ['challenge-banner', refresh],
             ['history-changed', refreshInspector], ['events-changed', refreshInspector],
             ['game-event', onEvent], ['native-status', onNative],
+            ['session-expired', () => this.toasts.show('Session ended', 'Your game was idle too long or the server restarted. Returning to the title…', 'ERROR')],
         ];
         handlers.forEach(([evt, fn]) => em.on(evt, fn));
         this.events.once('shutdown', () => handlers.forEach(([evt, fn]) => em.off(evt, fn)));
@@ -71,6 +73,9 @@ export class HUDScene extends Phaser.Scene {
                 break;
             case 'ITEM_GAINED':
                 this.toasts.show('Item gained', prettyItem(detail), type);
+                break;
+            case 'ADVENTURE_READY':     // every main quest done: go and see the King
+                this.toasts.show(ENDING.objective.title, ENDING.objective.text, 'QUEST_UNLOCKED');
                 break;
             default:
                 this.toasts.show(type, prettyItem(detail));

@@ -1,7 +1,7 @@
 // MapGraph - derives the graph the C engine searches FROM the playable map.
 //
 //   Tiled map -> walkable / blocked tile grid -> zones (Nodes layer)
-//             -> graph { nodes, edges } -> BFS / DFS in C
+//             -> graph { nodes, edges } -> BFS / DFS / Dijkstra / A* in C
 //
 // Why zones and not one node per tile: the C engine accepts at most 256 nodes,
 // and a 50x50 map has 2500 tiles. So each clearing / town is a NODE, and an

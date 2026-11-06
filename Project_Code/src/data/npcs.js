@@ -1,5 +1,5 @@
 // NPC definitions. `cppType` is the C++ class instantiated in the OOP engine
-// (Guide, King, Blacksmith, Librarian, Guard) - its virtual greeting() is
+// (Guide, King, Blacksmith, GardenKeeper, Guard) - its virtual greeting() is
 // what the NPC says first when you talk to it.
 // Positions are NOT here: the Tiled maps place NPCs and objects (Entities
 // layer, see data/world.js). Sprites are chosen in config/assets.js (NPCs) and
@@ -30,13 +30,13 @@ export const NPCS = {
         idle: ['Clang. Clang. Clang.'],
         locked: ['Busy right now. Come back when the Guide and the King are done with you.'],
     },
-    librarian: {
-        id: 'librarian',
-        name: 'Librarian',
-        cppType: 'Librarian',
+    keeper: {
+        id: 'keeper',
+        name: 'Elarion',
+        cppType: 'GardenKeeper',
         color: 0x9d4edd,
-        idle: ['Shh.'],
-        locked: ['The archive is closed for cataloguing. Come back later.'],
+        idle: ['The old trees stand straight again. Walk where you like.'],
+        locked: ['The garden is not ready for visitors. Help the Blacksmith first.'],
     },
     guard: {
         id: 'guard',
@@ -50,12 +50,14 @@ export const NPCS = {
 
 // Interactive objects in the world. `cppType` + `param` build the C++ object
 // (Door requires an item, Chest = item:count:gold, QuestObject = collect/deliver).
+// `bonus: true` marks an optional coin location: the end screen counts it.
 export const OBJECTS = {
     old_chest: {
         id: 'old_chest',
         name: 'Old Chest',
         cppType: 'Chest',
         param: 'Map_Fragment:1:25',
+        bonus: true,          // optional bonus coin location (counted on the end screen)
         color: 0xb5651d,
         shape: 'square',
         verb: 'Open',
@@ -72,11 +74,25 @@ export const OBJECTS = {
         size: 30,
         sprite: 'dungeon_door',
     },
+    // Entrance to the Garden of Balance (a C++ Door with no key): opens the
+    // garden map while The Unbalanced Garden is active (quest.entry).
+    garden_gate: {
+        id: 'garden_gate',
+        name: 'Garden of Balance',
+        cppType: 'Door',
+        param: null,
+        color: 0x2d6a4f,
+        shape: 'square',
+        verb: 'Enter',
+        size: 30,
+        sprite: 'castle_gate',
+    },
     well: {
         id: 'well',
         name: 'Village Well',
         cppType: 'Chest',
         param: 'Lucky_Coin:1:5',
+        bonus: true,
         color: 0x5c677d,
         shape: 'circle',
         verb: 'Search',

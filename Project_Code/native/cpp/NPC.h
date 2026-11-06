@@ -48,10 +48,10 @@ protected:
     std::string greeting(const Player &player) const override;
 };
 
-class Librarian : public NPC {
+class GardenKeeper : public NPC {
 public:
     using NPC::NPC;
-    std::string typeName() const override { return "Librarian"; }
+    std::string typeName() const override { return "GardenKeeper"; }
 protected:
     std::string greeting(const Player &player) const override;
 };

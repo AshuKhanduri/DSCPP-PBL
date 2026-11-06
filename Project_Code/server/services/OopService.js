@@ -1,7 +1,7 @@
 // OopService - turns validated JavaScript calls into C++ engine commands.
 import { displayName, int, number, token, ValidationError } from '../validation.js';
 
-export const ENTITY_TYPES = ['Guide', 'King', 'Blacksmith', 'Librarian', 'Guard', 'Door', 'Chest', 'QuestObject'];
+export const ENTITY_TYPES = ['Guide', 'King', 'Blacksmith', 'GardenKeeper', 'Guard', 'Door', 'Chest', 'QuestObject'];
 
 export class OopService {
     constructor(engine) {

@@ -46,6 +46,8 @@ export const COLORS = {
     graphFog: 0x3a3f4b,
     bfs: 0xffd60a,
     dfs: 0xc77dff,
+    dijkstra: 0xffd60a,
+    astar: 0x4cc9f0,
     route: 0xff7b00,
 };
 

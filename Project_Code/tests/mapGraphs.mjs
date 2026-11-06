@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { buildTileGrid, mapProperties, parseZones } from '../src/systems/MapData.js';
 import { deriveGraph } from '../src/systems/MapGraph.js';
 import { ART_SCALE } from '../src/config/assets.js';
+import { ROYAL_HSCALE, TERRAIN_FACTOR } from '../src/data/graphs.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -22,3 +23,7 @@ function graphOf(file, options) {
 }
 
 export const whisperingWoods = graphOf('lost_path.json', { weighted: false });
+export const kingdomRoads = {
+    ...graphOf('royal_route.json', { weighted: true, factors: TERRAIN_FACTOR, hscale: ROYAL_HSCALE }),
+    heuristicScale: ROYAL_HSCALE,
+};

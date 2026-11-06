@@ -2,6 +2,7 @@
 // log panel. The quest log draws the C linked list exactly as returned:
 // node -> next -> next ... with each node's status.
 import { ITEM_ICONS } from '../config/assets.js';
+import { ENDING } from '../data/ending.js';
 import { COLORS, DEPTH, GAME_WIDTH, textStyle } from '../config/constants.js';
 
 const STATUS_COLOR = { LOCKED: '#6c757d', AVAILABLE: '#ffd60a', ACTIVE: '#4cc9f0', COMPLETED: '#52b788' };
@@ -40,11 +41,17 @@ export class QuestUI {
             const p = active.progress;
             this.questText.setText(`▶ ${active.title}  (${active.concept})`);
             this.objectiveText.setText(active.objective + (p ? `  [${p.current}/${p.target}]` : ''));
+        } else if (this.services.adventure?.isEndingDue(quests.all())) {
+            this.questText.setText(`▶ ${ENDING.objective.title}`);
+            this.objectiveText.setText(ENDING.objective.text);
+        } else if (this.services.adventure?.complete) {
+            this.questText.setText(ENDING.screen.label);
+            this.objectiveText.setText('The road beyond the town awaits.');
         } else {
             const next = quests.all().find(q => q.status === 'AVAILABLE');
             const giver = next ? next.giver : null;
-            this.questText.setText(next ? `Next quest: ${next.title}` : 'Quest complete!');
-            this.objectiveText.setText(next ? `Look for the "!" above the ${giverName(giver)}.` : 'More quests are on the way.');
+            this.questText.setText(next ? `Next quest: ${next.title}` : 'All quests complete!');
+            this.objectiveText.setText(next ? `Look for the "!" above ${giverName(giver)}.` : 'You are the champion of QuestForge.');
         }
         const pl = inventory.player;
         const native = this.nativeOnline === false ? '  ● NATIVE OFFLINE' : '';
@@ -120,5 +127,5 @@ export class QuestUI {
 }
 
 function giverName(id) {
-    return { guide: 'Guide', king: 'King', blacksmith: 'Blacksmith', librarian: 'Librarian', guard: 'Tower Guard' }[id] ?? id;
+    return { guide: 'the Guide', king: 'the King', blacksmith: 'the Blacksmith', keeper: 'Elarion', guard: 'the Tower Guard' }[id] ?? id;
 }

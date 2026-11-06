@@ -21,10 +21,14 @@ export const ASSET_MANIFEST = {
     tilemaps: [
         { key: 'map.village', url: 'maps/village.json' },
         { key: 'map.lostPath', url: 'maps/lost_path.json' },
+        { key: 'map.royalRoute', url: 'maps/royal_route.json' },
+        { key: 'map.garden', url: 'maps/garden.json' },
+        { key: 'map.forgeYard', url: 'maps/forge_yard.json' },
     ],
     audio: [
-        // No audio exists yet. AudioManager silently skips missing sounds.
-        // { key: 'sfx.talk', url: 'audio/talk.ogg' },
+        // Music. Sound effects (SOUNDS below) are still missing and silently skipped.
+        { key: 'music.title', url: 'audio/title_theme.mp3' },       // title + hero select (Fire Red intro)
+        { key: 'music.gameplay', url: 'audio/gameplay_theme.mp3' }, // all gameplay scenes (Littleroot Town)
     ],
 };
 
@@ -37,8 +41,8 @@ export const ART_SCALE = 2;
 // Player looks (chosen on the title screen). Sheet rows: down, left, right, up;
 // 4 frames per row (the reference README says 3, the drawn sheet has 4).
 export const PLAYER_LOOKS = {
-    male: { texture: 'player.male', label: 'Hero' },
-    female: { texture: 'player.female', label: 'Heroine' },
+    male: { texture: 'player.male', label: 'Male' },
+    female: { texture: 'player.female', label: 'Female' },
 };
 export const PLAYER_ANIM = { rows: ['down', 'left', 'right', 'up'], framesPerRow: 4, fps: 8 };
 
@@ -49,9 +53,11 @@ export const SPRITES = {
         guide: { texture: 'npc.guide', frame: 0 },
         king: { texture: 'npc.elder', frame: 0 },
         blacksmith: { texture: 'npc.blacksmith', frame: 0 },
-        librarian: { texture: 'npc.librarian', frame: 0 },
+        keeper: { texture: 'npc.keeper', frame: 0 },
         guard: { texture: 'npc.guard', frame: 0 },
     },
+    // Royal courier who walks the computed route in Royal Route.
+    courier: { texture: 'npc.mentor', frame: 0 },
 };
 
 // Characters stand on their feet: origin near the bottom of the 16x24 frame.
@@ -68,7 +74,8 @@ export function objectSprite(name) {
 export const ITEM_ICONS = {
     Guide_Lantern: 'obj.flame',
     Royal_Map: 'item.map',
-    Archive_Key: 'item.key',
+    Registry_Seal: 'item.scroll',
+    Balance_Seed: 'item.gem_sapphire',
     Royal_Seal: 'item.coin_gold',
     Trial_Crown: 'item.ingot_gold',
     Iron_Ore: 'item.ore',
@@ -93,5 +100,9 @@ export const SOUNDS = {
     reward: 'sfx.reward',
     error: 'sfx.error',
     step: 'sfx.step',
-    music: { village: 'music.village' },
+    music: { title: 'music.title', gameplay: 'music.gameplay' },
 };
+
+// Seconds into a music file where playback (and every loop) starts. The title
+// track's first 24 s are a slow intro, so it starts and loops from 24 s.
+export const MUSIC_LOOP_START = { title: 24 };

@@ -7,6 +7,8 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include "search_trace.h"
+
 typedef struct Edge {
     int to;
     int weight;
@@ -44,7 +46,19 @@ void path_result_build(PathResult *r, const Graph *g, const int *parent, int sta
 /* Weight of the edge u->v, or -1 if none. */
 int  graph_edge_weight(const Graph *g, int u, int v);
 
+/* BFS and DFS accept goal = NO_GOAL: visit every node reachable from start
+ * (a full traversal); the result then has found = 0 and an empty path. */
+#define NO_GOAL (-1)
+
 int  bfs_search(const Graph *g, int start, int goal, PathResult *out);
 int  dfs_search(const Graph *g, int start, int goal, PathResult *out);
+/* Same searches, also recording every operation (search_trace.h). trace may be NULL. */
+int  bfs_search_traced(const Graph *g, int start, int goal, PathResult *out, SearchTrace *trace);
+int  dfs_search_traced(const Graph *g, int start, int goal, PathResult *out, SearchTrace *trace);
+int  dijkstra_search(const Graph *g, int start, int goal, PathResult *out);
+/* hscale: heuristic = euclidean_distance(node, goal) / hscale.
+ * consistent_out is set to 1 if w(u,v) >= h-distance(u,v) for every edge,
+ * which guarantees A* returns an optimal path. */
+int  astar_search(const Graph *g, int start, int goal, double hscale, PathResult *out, int *consistent_out);
 
 #endif

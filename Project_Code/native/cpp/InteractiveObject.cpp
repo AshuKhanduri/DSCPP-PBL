@@ -91,6 +91,7 @@ void Chest::writeExtraJson(JsonWriter &w) const
 {
     InteractiveObject::writeExtraJson(w);
     w.field("opened", opened_);
+    w.field("gold", gold_);         // paid once, when opened (the end screen sums it)
 }
 
 // ----------------------------------------------------------- QuestObject

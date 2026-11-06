@@ -9,10 +9,11 @@ import { QUESTS } from '../src/data/quests.js';
 import { NPCS, OBJECTS } from '../src/data/npcs.js';
 import { MAPS } from '../src/data/world.js';
 import { ASSET_CATALOG } from '../src/data/assetCatalog.js';
+import { ROYAL_HSCALE } from '../src/data/graphs.js';
 import { parseTiledObjects } from '../src/systems/MapManager.js';
 import { buildTileGrid, parseProps } from '../src/systems/MapData.js';
 import { deriveGraph } from '../src/systems/MapGraph.js';
-import { loadMap, whisperingWoods } from './mapGraphs.mjs';
+import { kingdomRoads, loadMap, whisperingWoods } from './mapGraphs.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const mapFile = id => MAPS[id].file.replace('maps/', '');
@@ -58,12 +59,58 @@ test('village entities reference defined NPCs/objects and stand on walkable grou
     assert.equal(grid.blocked[Math.floor(spawn.y / 16) * grid.cols + Math.floor(spawn.x / 16)], 0, 'spawn is blocked');
 });
 
-test('the graph derived from the Lost Path map is the designed graph', () => {
+test('garden map: the Ancient Tree, Elarion and the exit are reachable on foot from the spawn', () => {
+    const json = loadMap('garden.json');
+    const grid = buildTileGrid(json);
+    const { entities, solids, spawns } = parseTiledObjects(json);
+    const T = json.tilewidth;
+    // walkable = not a blocked tile and not covered by a prop's collision rectangle
+    const blocked = new Uint8Array(grid.blocked);
+    for (const s of solids) {
+        for (let y = Math.floor(s.y / T); y <= Math.floor((s.y + s.h - 1) / T); y++)
+            for (let x = Math.floor(s.x / T); x <= Math.floor((s.x + s.w - 1) / T); x++) blocked[y * grid.cols + x] = 1;
+    }
+    const tile = p => Math.floor(p.y / T) * grid.cols + Math.floor(p.x / T);
+    const seen = new Set([tile(spawns.default)]);
+    const queue = [tile(spawns.default)];
+    while (queue.length) {
+        const i = queue.shift(), x = i % grid.cols, y = (i - x) / grid.cols;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+            const nx = x + dx, ny = y + dy, n = ny * grid.cols + nx;
+            if (nx >= 0 && ny >= 0 && nx < grid.cols && ny < grid.rows && !blocked[n] && !seen.has(n)) { seen.add(n); queue.push(n); }
+        }
+    }
+    const near = p => [-1, 0, 1].some(dy => [-1, 0, 1].some(dx => seen.has(tile({ x: p.x + dx * T, y: p.y + dy * T }))));
+    const tree = entities.find(e => e.ref === 'ancient_tree');
+    const keeper = entities.find(e => e.ref === 'keeper');
+    assert.ok(tree && keeper, 'the garden has the Ancient Tree and Elarion');
+    assert.ok(near(tree), 'the Ancient Tree can be reached');
+    assert.ok(near(keeper), 'Elarion can be reached');
+    assert.ok([...seen].some(i => Math.floor(i / grid.cols) === grid.rows - 1), 'the gate (exit) in the bottom hedge can be reached');
+    assert.ok(!JSON.stringify(json).includes('librar'), 'no library left in the garden map');
+});
+
+test('graphs derived from the Lost Path and Royal Route maps are the designed graphs', () => {
     assert.equal(whisperingWoods.nodes.length, 16);
     assert.equal(whisperingWoods.edges.length, 21);
-    const ids = new Set(whisperingWoods.nodes.map(n => n.id));
-    assert.ok(ids.has(whisperingWoods.start) && ids.has(whisperingWoods.goal));
-    for (const e of whisperingWoods.edges) assert.ok(ids.has(e.from) && ids.has(e.to), `${e.from}-${e.to}`);
+    assert.equal(kingdomRoads.nodes.length, 11);
+    assert.equal(kingdomRoads.edges.length, 18);
+    for (const g of [whisperingWoods, kingdomRoads]) {
+        const ids = new Set(g.nodes.map(n => n.id));
+        assert.ok(ids.has(g.start) && ids.has(g.goal));
+        for (const e of g.edges) assert.ok(ids.has(e.from) && ids.has(e.to), `${e.from}-${e.to}`);
+    }
+    // weights come from the terrain under the road, and never beat the
+    // straight line (keeps the A* heuristic consistent)
+    const byId = Object.fromEntries(kingdomRoads.nodes.map(n => [n.id, n]));
+    for (const e of kingdomRoads.edges) {
+        const d = Math.hypot(byId[e.from].x - byId[e.to].x, byId[e.from].y - byId[e.to].y) / ROYAL_HSCALE;
+        assert.ok(e.weight >= d, `${e.from}-${e.to} weight ${e.weight} < ${d}`);
+    }
+    const marsh = kingdomRoads.edges.find(e => [e.from, e.to].sort().join() === 'castle,cross');
+    const road = kingdomRoads.edges.find(e => [e.from, e.to].sort().join() === 'castle,mill');
+    assert.equal(marsh.terrain, 'marsh');
+    assert.ok(marsh.weight > road.weight, 'marsh road should cost more than a paved road');
 });
 
 test('deriveGraph: corridors become edges, blocked tiles separate, terrain sets weight', () => {

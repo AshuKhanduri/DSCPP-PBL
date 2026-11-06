@@ -112,8 +112,10 @@ export class DialogueBox {
         const choices = this.page.choices;
         this.choiceIndex = 0;
         const top = BOX.y + 24 + this.text.height + 10;
+        const rows = choices.length > 4 ? Math.ceil(choices.length / 2) : choices.length;   // long lists: 2 columns
         choices.forEach((ch, i) => {
-            const t = this.scene.add.text(BOX.x + 40, top + i * 24, '', textStyle(16, INK))
+            const col = Math.floor(i / rows), row = i % rows;
+            const t = this.scene.add.text(BOX.x + 40 + col * (BOX.w / 2 - 20), top + row * 24, '', textStyle(16, INK))
                 .setInteractive({ useHandCursor: true })
                 .on('pointerover', () => { this.choiceIndex = i; this.#renderChoices(); })
                 .on('pointerdown', () => this.#select(i));

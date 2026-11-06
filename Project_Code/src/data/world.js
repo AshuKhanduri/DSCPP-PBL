@@ -8,4 +8,7 @@
 export const MAPS = {
     village: { id: 'village', tilemapKey: 'map.village', file: 'maps/village.json' },
     lostPath: { id: 'lostPath', tilemapKey: 'map.lostPath', file: 'maps/lost_path.json' },
+    royalRoute: { id: 'royalRoute', tilemapKey: 'map.royalRoute', file: 'maps/royal_route.json' },
+    garden: { id: 'garden', tilemapKey: 'map.garden', file: 'maps/garden.json' },
+    forgeYard: { id: 'forgeYard', tilemapKey: 'map.forgeYard', file: 'maps/forge_yard.json' },
 };

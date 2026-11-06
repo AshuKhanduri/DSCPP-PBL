@@ -4,6 +4,7 @@ import { BootScene } from './scenes/BootScene.js';
 import { WorldScene } from './scenes/WorldScene.js';
 import { QuestScene } from './scenes/QuestScene.js';
 import { HUDScene } from './scenes/HUDScene.js';
+import { EndScene } from './scenes/EndScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -17,7 +18,7 @@ const config = {
         height: GAME_HEIGHT,
     },
     // HUDScene is last so it always renders above World/Quest scenes.
-    scene: [BootScene, WorldScene, QuestScene, HUDScene],
+    scene: [BootScene, WorldScene, QuestScene, EndScene, HUDScene],
 };
 
 const game = new Phaser.Game(config);

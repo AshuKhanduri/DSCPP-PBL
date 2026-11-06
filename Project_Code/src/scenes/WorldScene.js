@@ -11,6 +11,8 @@ import { InteractionSystem } from '../systems/InteractionSystem.js';
 import { MapManager } from '../systems/MapManager.js';
 import { QuestStatus } from '../systems/QuestManager.js';
 import { services } from '../systems/GameServices.js';
+import { DEV, prepareQuest } from '../systems/DevTools.js';
+import { ENDING } from '../data/ending.js';
 
 // What each C++ interaction result means for the action-history stack.
 const ACTION_FOR_RESULT = {
@@ -29,7 +31,7 @@ export class WorldScene extends Phaser.Scene {
     create() {
         this.transitioning = false;
         services.audio.attach(this);
-        services.audio.playMusic('village');
+        services.audio.playMusic('gameplay');   // no-op if already playing
 
         this.map = MapManager.load('village', this);
         this.map.render(this);
@@ -45,7 +47,10 @@ export class WorldScene extends Phaser.Scene {
         this.cameras.main.setRoundPixels(true);
         this.cameras.main.fadeIn(250);
 
-        this.dialogue = new DialogueSystem(this, services, { launchChallenge: q => this.launchChallenge(q) });
+        this.dialogue = new DialogueSystem(this, services, {
+            launchChallenge: q => this.launchChallenge(q),
+            onFarewell: () => this.#depart(),
+        });
         this.interaction = new InteractionSystem(this, this.player, {
             isBlocked: () => this.dialogue.isOpen || this.transitioning,
         });
@@ -74,6 +79,31 @@ export class WorldScene extends Phaser.Scene {
         const onQuests = () => this.#refreshMarkers();
         services.emitter.on('quests-changed', onQuests);
         this.events.once('shutdown', () => services.emitter.off('quests-changed', onQuests));
+
+        if (DEV) this.input.keyboard.on('keydown-F9', () => this.#devQuestPicker());
+    }
+
+    // Dev only (npm run dev): jump to any quest; earlier quests are completed in C first.
+    #devQuestPicker() {
+        if (this.dialogue.isOpen || this.transitioning) return;
+        const quests = services.quests.all();
+        this.dialogue.say([{
+            speaker: 'Dev',
+            text: 'Jump to which quest? (earlier quests are completed in C, rewards included)',
+            choices: [
+                ...quests.map(q => ({
+                    label: `${q.title}  [${q.status}]`,
+                    onSelect: async () => {
+                        const quest = await prepareQuest(services, q.id);
+                        if (!quest.challenge) return [{ speaker: 'Dev', text: `${quest.title} is a dialogue quest - talk to the ${NPCS[quest.giver].name}.` }];
+                        this.dialogue.box.close();
+                        this.launchChallenge(quest);
+                        return [];
+                    },
+                })),
+                { label: 'Cancel', onSelect: () => [] },
+            ],
+        }]);
     }
 
     update(_time, delta) {
@@ -83,10 +113,27 @@ export class WorldScene extends Phaser.Scene {
     }
 
     #refreshMarkers() {
+        const endingDue = services.adventure.isEndingDue(services.quests.all());
         for (const npc of this.npcs) {
             const q = services.quests.questForGiver(npc.id);
-            npc.setQuestMarker(q?.status);
+            // "!" over the King when only his farewell is left
+            npc.setQuestMarker(endingDue && npc.id === ENDING.giver ? QuestStatus.AVAILABLE : q?.status);
         }
+    }
+
+    // After the King's farewell: the explorer leaves town - fade the world and
+    // the gameplay music out, then the end screen (scenes/EndScene.js).
+    #depart() {
+        if (this.transitioning) return;
+        this.transitioning = true;
+        services.history.record('ADVENTURE_COMPLETE', ENDING.giver);
+        const FADE_MS = 1400;
+        services.audio.fadeOutMusic(FADE_MS);
+        this.cameras.main.fadeOut(FADE_MS, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.stop('HUDScene');
+            this.scene.start('EndScene');
+        });
     }
 
     // Objects are handled by their C++ class: Chest, Door, ...

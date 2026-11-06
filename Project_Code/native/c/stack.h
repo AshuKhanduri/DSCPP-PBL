@@ -4,7 +4,10 @@
  * Used by the game for:
  *   - the player's action history (newest action on top)
  *   - the route "breadcrumb" stack in graph challenges (backtracking)
+ *   - the bracket-matching trial in the Tower of Trials
  *   - iterative DFS (dfs.c)
+ *   - the Tower of Trials stack chamber, with a fixed capacity: pushing onto a
+ *     full stack is an OVERFLOW, popping / peeking an empty one an UNDERFLOW
  *
  * push / pop / peek are all O(1).
  */
@@ -23,13 +26,15 @@ typedef struct StackNode {
 typedef struct {
     StackNode *top;
     int size;
+    int capacity;              /* 0 = unlimited                          */
 } Stack;
 
 void stack_init(Stack *s);
-int  stack_push(Stack *s, int value, int aux, const char *text); /* 1 ok, 0 alloc fail */
+int  stack_push(Stack *s, int value, int aux, const char *text); /* 1 ok, 0 full / alloc fail */
 int  stack_pop(Stack *s, StackNode *out);                        /* 1 ok, 0 empty      */
 const StackNode *stack_peek(const Stack *s);                     /* NULL when empty    */
 int  stack_is_empty(const Stack *s);
+int  stack_is_full(const Stack *s);                              /* never with capacity 0 */
 void stack_clear(Stack *s);
 
 #endif

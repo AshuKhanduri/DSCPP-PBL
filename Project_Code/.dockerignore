@@ -1,0 +1,10 @@
+# Keep secrets and local builds out of the image.
+.env
+.env.*
+!.env.example
+node_modules
+dist
+native/bin/*
+.git
+.claude
+*.log

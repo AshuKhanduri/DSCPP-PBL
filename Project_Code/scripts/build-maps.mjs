@@ -5,7 +5,7 @@
 // The maps are ordinary Tiled JSON (orthogonal, 16x16 tiles, embedded
 // tilesets) and can be opened and edited in Tiled afterwards. They are
 // generated so the layouts are reproducible and so the graph maps can be
-// CHECKED: for Lost Path the graph is derived from the
+// CHECKED: for Lost Path and Royal Route the graph is derived from the
 // finished map with the same code the game uses (src/systems/MapGraph.js),
 // and the build fails if the walkable corridors do not produce exactly the
 // intended edges (e.g. two trails accidentally crossing).
@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { ASSET_CATALOG } from '../src/data/assetCatalog.js';
 import { buildTileGrid, parseZones } from '../src/systems/MapData.js';
 import { deriveGraph } from '../src/systems/MapGraph.js';
+import { TERRAIN_FACTOR, ROYAL_HSCALE } from '../src/data/graphs.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'assets', 'maps');
@@ -79,7 +80,7 @@ class MapBuilder {
     inside(x, y) { return x >= 0 && y >= 0 && x < this.cols && y < this.rows; }
     set(x, y, tile) { if (this.inside(x, y)) this.ground[this.i(x, y)] = TILE[tile]; }
     get(x, y) { return this.ground[this.i(x, y)]; }
-    fill(x, y, w, h, tile) { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) this.set(xx, yy, Array.isArray(tile) ? this.pick(tile) : tile); }
+    fill(x, y, w, h, tile) { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) this.set(xx, yy, Array.isArray(tile) ? this.pick(tile) : tile); return this; }
     block(x, y, w, h, on = 1) { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) if (this.inside(xx, yy)) this.blocked[this.i(xx, yy)] = on; }
     isBlocked(x, y) { return !this.inside(x, y) || this.blocked[this.i(x, y)] === 1 || terrain.tiles[this.get(x, y) - 1]?.collides; }
     pick(list) { return list[Math.floor(this.random() * list.length)]; }
@@ -212,7 +213,7 @@ function village() {
     // roads
     m.fill(1, 20, 37, 2, 'sand');                 // main street
     m.fill(23, 9, 2, 26, 'sand');                 // north-south street to the castle
-    m.fill(11, 22, 2, 8, 'sand');                 // to the archive
+    m.fill(11, 22, 2, 7, 'sand');                 // to the Garden of Balance gate
     m.fill(30, 22, 2, 6, 'sand');                 // to the shop
     // royal courtyard + carpet to the castle gate
     m.fill(17, 9, 14, 6, 'stone_light');
@@ -245,10 +246,16 @@ function village() {
     m.prop('forge', 34.4, 19.2).prop('anvil', 36.4, 19.4).prop('barrel_wood', 27.6, 19.2);
     m.entity('blacksmith', 'npc', 33.6, 19.9);
 
-    // Archive / library (Forgotten Archive)
-    m.prop('house_purple', 11.5, 32.4);
-    m.prop('shelf_small', 8.4, 32.4).prop('book_stand', 14.6, 32.2, { solid: false });
-    m.entity('librarian', 'npc', 14.2, 30.6);
+    // Garden of Balance (The Unbalanced Garden) - a hedged garden where the
+    // old library stood; the gate leads into the garden map, Elarion keeps it.
+    m.fill(6, 29, 9, 6, 'grass_light');
+    m.fill(6, 29, 9, 1, 'hedge').fill(6, 29, 1, 6, 'hedge').fill(14, 29, 1, 6, 'hedge').fill(6, 34, 9, 1, 'hedge');
+    m.fill(11, 29, 2, 4, 'stone_light');          // gate gap and the path inside
+    m.fill(7, 30, 3, 2, 'flowerbed').fill(7, 32, 2, 2, 'flowerbed');
+    m.prop('tree_big', 9.6, 33.4).prop('garden_statue', 12, 33.6).prop('flower_bed', 13.4, 31.6, { solid: false });
+    m.prop('hedge_pink', 13.4, 33.4, { solid: false }).prop('flower_pot', 10.2, 31.2, { solid: false });
+    m.entity('garden_gate', 'object', 12, 29.9);
+    m.entity('keeper', 'npc', 9.4, 28.4);
 
     // Tower of Trials (Tower quest) on the island east of the river
     m.prop('tower', 43, 13.2);
@@ -347,6 +354,125 @@ function lostPath() {
     console.log(`lost_path: ${g.nodes.length} nodes, ${g.edges.length} edges (matches design)`);
 }
 
+// =============================================================== ROYAL ROUTE
+const KINGDOM = {
+    nodes: [
+        ['castle', 'Castle', 60, 330], ['mill', 'Mill', 185, 180], ['farm', 'Farm', 185, 480], ['cross', 'Crossroads', 315, 330],
+        ['forest', 'Forest', 320, 120], ['marsh', 'Marsh', 320, 560], ['bridge', 'Bridge', 445, 240], ['village', 'Village', 445, 440],
+        ['hills', 'Hills', 560, 120], ['quarry', 'Quarry', 560, 570], ['harbor', 'Harbor', 590, 335],
+    ],
+    roads: [
+        ['castle', 'mill', 'road'], ['castle', 'farm', 'road'], ['castle', 'cross', 'marsh'], ['mill', 'forest', 'road'],
+        ['mill', 'cross', 'road'], ['farm', 'cross', 'road'], ['farm', 'marsh', 'road'], ['forest', 'bridge', 'forest'],
+        ['forest', 'hills', 'hills'], ['cross', 'bridge', 'road'], ['cross', 'village', 'forest'], ['marsh', 'village', 'marsh'],
+        ['marsh', 'quarry', 'road'], ['bridge', 'harbor', 'hills'], ['bridge', 'village', 'road'], ['hills', 'harbor', 'road'],
+        ['village', 'harbor', 'road'], ['quarry', 'harbor', 'hills'],
+    ],
+};
+const ROAD_TILE = { road: 'sand', forest: 'grass_forest', hills: 'dirt', marsh: 'marsh' };
+const TOWN_DECOR = {
+    castle: 'castle_gate', mill: 'house_red', farm: 'house_green', cross: 'signpost', forest: 'house_blue_small',
+    marsh: 'house_purple', bridge: 'lamp_blue', village: 'house_blue', hills: 'rock_big', quarry: 'cauldron', harbor: 'barrel_wood',
+};
+
+function royalRoute() {
+    const m = new MapBuilder('royal_route', 64, 54, {
+        ground: 'grass_dark', seed: 23,
+        properties: { title: 'Royal Route', start: 'castle', goal: 'harbor', terrainSpeed: true },
+    });
+    m.block(0, 0, 64, 54);
+    const at = Object.fromEntries(KINGDOM.nodes.map(([id, , x, y]) => [id, { x: Math.round(x / 11) + 1, y: Math.round(y / 11) - 4 }]));
+    // the sea behind the harbor
+    m.fill(60, 0, 4, 54, ['water', 'water_b']);
+    const trails = KINGDOM.roads.map(([a, b, kind]) => carve(m, at[a], at[b], 1, ROAD_TILE[kind]));
+    separateTrails(m, trails, KINGDOM.nodes.map(([id]) => ({ x: at[id].x - 3, y: at[id].y - 3, w: 7, h: 7 })), 'grass_dark');
+    for (const [id, label] of KINGDOM.nodes) {
+        const c = at[id];
+        m.node(id, label, c.x - 3, c.y - 3, 7, 7);
+        m.block(c.x - 3, c.y - 3, 7, 7, 0);
+        m.fill(c.x - 3, c.y - 3, 7, 7, id === 'castle' || id === 'harbor' ? 'stone' : 'stone_b');
+    }
+    // a town landmark beside each zone, on the side without roads
+    for (const [id] of KINGDOM.nodes) {
+        const c = at[id];
+        const sides = [[0, -4.0], [0, 5.6], [-5, 2], [5.4, 2]];
+        const free = sides.find(([dx, dy]) => {
+            for (let yy = -2; yy <= 0; yy++) for (let xx = -1; xx <= 1; xx++) if (!m.isBlocked(Math.round(c.x + dx + xx), Math.round(c.y + dy + yy))) return false;
+            return true;
+        });
+        if (free) m.prop(TOWN_DECOR[id], c.x + 0.5 + free[0], c.y + free[1] + 0.4, { solid: false });
+    }
+    // trees along forest roads, rocks along hill roads (decor on blocked tiles)
+    forest(m, ['tree_pine', 'tree_round', 'tree_green', 'tree_autumn', 'tree_light', 'tree_cypress'], { density: 0.75 });
+    m.spawn('default', at.castle.x, at.castle.y);
+    const json = m.write();
+    const g = checkGraph(json, KINGDOM.roads, { weighted: true, factors: TERRAIN_FACTOR, hscale: ROYAL_HSCALE });
+    console.log(`royal_route: ${g.nodes.length} nodes, ${g.edges.length} edges (matches design)`);
+    console.log('  costs: ' + g.edges.map(e => `${e.from}-${e.to}:${e.weight}(${e.terrain})`).join('  '));
+}
+
+// ========================================================= GARDEN OF BALANCE
+// Hedge-walled garden: gate at the bottom, a winding path to the central
+// clearing with the Ancient Tree (opens the AVL lessons) and Elarion's spot.
+function garden() {
+    const m = new MapBuilder('garden', 26, 22, { ground: 'grass', seed: 17, properties: { title: 'Garden of Balance' } });
+    m.fill(0, 0, 26, 22, ['grass', 'grass', 'grass_b', 'grass_light']);
+    m.fill(0, 0, 26, 2, 'hedge').fill(0, 0, 1, 22, 'hedge').fill(25, 0, 1, 22, 'hedge').fill(0, 21, 26, 1, 'hedge');
+    m.fill(12, 21, 2, 1, 'sand');                                      // the gate gap (exit)
+    // winding path: up from the gate, west, north, then east into the clearing
+    m.fill(12, 16, 2, 5, 'sand').fill(6, 16, 8, 2, 'sand').fill(6, 11, 2, 7, 'sand').fill(6, 11, 4, 2, 'sand');
+    m.fill(16, 12, 6, 2, 'sand').fill(20, 12, 2, 6, 'sand');            // side path to the fountain nook
+    m.fill(9, 5, 8, 9, 'stone_light');                                 // the central clearing
+    // flower patches
+    m.fill(2, 3, 4, 3, 'flowerbed').fill(20, 3, 4, 3, 'flowerbed').fill(2, 18, 4, 2, 'flowerbed').fill(16, 18, 4, 2, 'flowerbed');
+    m.fill(9, 15, 2, 1, 'flowerbed').fill(15, 15, 3, 1, 'flowerbed');
+    // the Ancient Tree on a stone altar, flanked by statues
+    m.prop('tree_big', 13, 8.2);   // the altar in front of it is the interactive object (GardenChallenge)
+    m.prop('garden_statue', 10, 9.6).prop('garden_statue', 16, 9.6);
+    m.prop('lamp_yellow', 9.6, 13.4).prop('lamp_yellow', 16.4, 13.4);
+    // Elarion's corner and the fountain nook
+    m.prop('garden_bench', 19.4, 9.4).prop('flower_pot', 21.6, 9.2, { solid: false });
+    m.prop('fountain', 21, 17.2).prop('garden_bench', 18, 17.6);
+    // trees and hedges along the walls
+    for (const [x, y] of [[2, 3], [4.6, 2.6], [22, 2.6], [24, 4], [2, 9], [24, 9.5], [2, 13], [24, 14], [3, 20.6], [9, 20.6], [17, 20.6], [23.4, 20.6]]) m.prop(m.pick(['tree_round', 'tree_light', 'tree_green', 'tree_teal']), x, y);
+    for (const [x, y] of [[4, 11], [4, 14.6], [10.4, 19.4], [15.6, 19.4], [18, 3.4], [7.6, 3.4]]) m.prop(m.pick(['hedge_low', 'hedge_pink', 'bush_round', 'bush_berry']), x, y);
+    for (let n = 0; n < 26; n++) {
+        const x = 2 + m.random() * 22, y = 3 + m.random() * 17;
+        if (m.get(Math.floor(x), Math.floor(y - 0.5)) !== TILE.grass && m.get(Math.floor(x), Math.floor(y - 0.5)) !== TILE.grass_light) continue;
+        m.prop(m.pick(FLOWERS), x, y, { solid: false });
+    }
+    m.entity('ancient_tree', 'questObject', 13, 11.2, { role: 'tree' });
+    m.entity('keeper', 'npc', 18.4, 10.6);
+    m.spawn('default', 13, 19.6);
+    m.write();
+}
+
+// ================================================================ FORGE YARD
+function forgeYard() {
+    const m = new MapBuilder('forge_yard', 30, 20, { ground: 'dirt', seed: 3, properties: { title: "Blacksmith's Yard" } });
+    m.fill(0, 0, 30, 20, ['dirt', 'dirt', 'dirt_dark']);
+    m.fill(0, 0, 30, 3, 'wall_stone');
+    m.fill(0, 0, 1, 20, 'wall_stone');
+    m.fill(29, 0, 1, 20, 'wall_stone');
+    m.fill(0, 19, 30, 1, 'wall_stone');
+    m.fill(14, 11, 2, 8, 'stone');
+    m.prop('forge', 15, 5.6).prop('forge_small', 11, 5.4).prop('cauldron', 19, 5.2);
+    m.prop('iron_fence', 6, 4.4).prop('iron_fence', 23.5, 4.4).prop('banner_red', 8.4, 3.9, { solid: false });
+    m.prop('hammer', 17, 10.6, { solid: false });
+    for (const [x, y] of [[9, 10], [20.5, 8.5], [7, 15], [24, 13.4]]) m.prop(m.pick(['rock_big', 'rock_small', 'rock_flat']), x, y);
+    m.prop('barrel_wood', 27, 17.4).prop('barrel', 25.4, 17.6).prop('crate', 2.4, 13.8);
+    m.entity('ore', 'questObject', 4, 6.2, { id: 'ore', role: 'ore' });
+    m.entity('ore', 'questObject', 26, 5.6, { id: 'ore', role: 'ore' });
+    m.entity('ore', 'questObject', 21.6, 16.8, { id: 'ore', role: 'ore' });
+    m.entity('anvil', 'questObject', 15, 9.6, { id: 'anvil', role: 'anvil' });
+    m.entity('crate', 'questObject', 3.6, 17.2, { id: 'crate', role: 'crate' });
+    m.spawn('default', 15, 17.6);
+    m.write();
+}
+
 village();
 lostPath();
+royalRoute();
+garden();
+forgeYard();
 console.log(`maps written to ${OUT}`);

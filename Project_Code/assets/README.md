@@ -15,4 +15,4 @@ All art is cut from `reference/questforge_reference.webp` by
 | `items/` | Item icons (inventory, notifications) |
 | `ui/` | Dialogue frame, arrow, notification icons |
 | `maps/` | Tiled JSON maps |
-| `audio/` | Empty: no sounds exist yet |
+| `audio/` | `title_theme.mp3` (title + hero select), `gameplay_theme.mp3` (all gameplay). No sound effects yet |

@@ -7,12 +7,15 @@
 // Nothing here is specific to one NPC or one quest.
 import { DialogueBox } from '../ui/DialogueBox.js';
 import { QuestStatus } from './QuestManager.js';
+import { ENDING } from '../data/ending.js';
 
 export class DialogueSystem {
-    constructor(scene, services, { launchChallenge }) {
+    // onFarewell: called after the closing farewell dialogue has been read (WorldScene: leave for the end screen)
+    constructor(scene, services, { launchChallenge, onFarewell = null }) {
         this.scene = scene;
         this.services = services;
         this.launchChallenge = launchChallenge;
+        this.onFarewell = onFarewell;
         this.box = new DialogueBox(scene);
     }
 
@@ -40,6 +43,23 @@ export class DialogueSystem {
             };
         } catch (err) {
             greeting = { speaker: npc.name, text: '…', source: `native engine error: ${err.message}` };
+        }
+
+        // The end of the adventure: once every main quest is complete, the
+        // ending's giver (King Aldric) says farewell - once (systems/Adventure.js).
+        const adventure = this.services.adventure;
+        if (npc.id === ENDING.giver && adventure) {
+            if (adventure.isEndingDue(quests.all())) {
+                history.record('FAREWELL', npc.id);
+                await this.box.open([greeting, ...this.#lines(npc, ENDING.farewell)]);
+                adventure.markFarewell();          // only after the last line was read
+                this.onFarewell?.();
+                return;
+            }
+            if (adventure.complete) {
+                await this.box.open([greeting, ...this.#lines(npc, ENDING.afterword)]);
+                return;
+            }
         }
 
         const quest = quests.questForGiver(npc.id);

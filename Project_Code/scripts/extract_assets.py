@@ -24,7 +24,7 @@ import json
 import os
 from collections import deque
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 ASSETS = os.path.join(ROOT, 'assets')
@@ -215,8 +215,10 @@ UI = {
 
 # Characters ---------------------------------------------------------------
 # Player sheets: 4 rows (down, left, right, up) x 4 frames. NOTE: the README
-# panel says "12 frames (4 dir x 3)" but the drawn sheet has 4 frames per row;
-# all 16 are kept.
+# panel says "12 frames (4 dir x 3)" but the drawn sheet has 4 frames per row.
+# The drawn RIGHT and DOWN rows are not usable as walk cycles (see
+# fix_player_rows): the right rows mix left- and right-facing frames, and the
+# down rows change outfit / shift sideways between frames.
 PLAYER_ROWS = [(212, 245), (245, 278), (278, 311), (311, 344)]
 PLAYER_SHEETS = {
     'player_male': [(20, 41), (40, 61), (60, 81), (80, 101)],
@@ -356,6 +358,23 @@ def split_row(span, row, min_w=9):
                 runs.append((span[0] + start, span[0] + x))
             start = None
     return runs
+
+
+def fix_player_rows(frames):
+    """Rebuild the two broken rows of a 4x4 player sheet from clean frames.
+
+    Measured on the reference: every LEFT frame faces left, but the RIGHT row
+    is male L-R-L-R / female L-L-L-R, so walking right flipped the character
+    back and forth. The DOWN rows switch outfit (female) or jump sideways
+    (male) from frame to frame.
+      right = the left row mirrored (same stride, facing right)
+      down  = front frame 0 alternating with its mirror (legs swap each step,
+              outfit and position cannot drift)
+    """
+    down0, left = frames[0], frames[4:8]
+    down = [down0, ImageOps.mirror(down0), down0, ImageOps.mirror(down0)]
+    right = [ImageOps.mirror(f) for f in left]
+    return down + left + right + frames[12:16]
 
 
 def to_frame(sprite):
@@ -515,7 +534,7 @@ def main():
     for name, cols in PLAYER_SHEETS.items():
         frames = [to_frame(char_cutout((x0, y0, x1, y1)))
                   for (y0, y1) in PLAYER_ROWS for (x0, x1) in cols]
-        img = sheet(frames, 4)
+        img = sheet(fix_player_rows(frames), 4)
         url = save(img, f'sprites/player/{name}.png')
         catalog['characters'][name] = {'key': name.replace('_', '.'), 'url': url, 'frameWidth': FRAME_W,
                                        'frameHeight': FRAME_H, 'columns': 4,
