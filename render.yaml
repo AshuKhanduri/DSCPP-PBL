@@ -1,0 +1,20 @@
+# Render Blueprint: Render -> New -> Blueprint -> pick this repository.
+# Builds Project_Code/Dockerfile and asks you for MONGODB_URI (never stored in git).
+services:
+  - type: web
+    name: questforge
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Project_Code/Dockerfile
+    dockerContext: ./Project_Code
+    # a health check that starts no game engines
+    healthCheckPath: /api/online/status
+    envVars:
+      - key: MONGODB_URI
+        sync: false          # Render prompts for it; paste your Atlas connection string there
+      - key: MONGODB_DB
+        value: QuestForge    # must match your local .env exactly (MongoDB names are case-sensitive)
+      - key: QUESTFORGE_MAX_SESSIONS
+        value: "10"          # players at once (each runs its own C + C++ engine pair)
+      - key: QUESTFORGE_SESSION_IDLE_MIN
+        value: "30"

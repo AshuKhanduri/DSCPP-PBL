@@ -161,7 +161,7 @@ docker run -p 3001:3001 -e MONGODB_URI="<your Atlas string>" -e MONGODB_DB=Quest
 
 1. Put the project on GitHub (`.env` is git-ignored; check it is not in the repository before pushing).
 2. Atlas → *Network Access* → *Add IP Address* → *Allow access from anywhere* (`0.0.0.0/0`). Cloud hosts have no fixed IP. Your database user's password is then the protection, so use a long random one.
-3. Render → *New* → *Blueprint* → pick the repository. `render.yaml` creates a free Docker web service and asks for `MONGODB_URI`: paste your Atlas connection string there. `MONGODB_DB` must match your local `.env` exactly (database names are case-sensitive).
+3. Render → *New* → *Blueprint* → pick the repository. `render.yaml` (at the repository root, pointing at `Project_Code/`) creates a free Docker web service and asks for `MONGODB_URI`: paste your Atlas connection string there. `MONGODB_DB` must match your local `.env` exactly (database names are case-sensitive).
 4. When the deploy is live, share the `https://….onrender.com` link.
 
 Free-tier notes: the service sleeps after about 15 idle minutes and the next visit takes roughly a minute to wake it (any games in progress are lost when it sleeps). Each player uses two small processes; 10 players at once is a safe start on 512 MB.
